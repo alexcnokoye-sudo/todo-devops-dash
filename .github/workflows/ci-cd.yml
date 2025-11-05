@@ -1,0 +1,92 @@
+name: CI/CD Pipeline
+
+# Trigger workflow on push to main branch or pull requests
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Job 1: Install dependencies and run tests
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout code from repository
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Setup Node.js environment
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # Install project dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Run unit tests with coverage
+      - name: Run tests
+        run: npm test
+
+      # Optional: Upload test coverage reports
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage/
+
+  # Job 2: Build and push Docker image
+  build:
+    runs-on: ubuntu-latest
+    needs: test  # Only run if tests pass
+    
+    steps:
+      # Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Setup Docker Buildx for multi-platform builds
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Login to Docker Hub (optional - configure secrets)
+      # - name: Login to Docker Hub
+      #   uses: docker/login-action@v2
+      #   with:
+      #     username: ${{ secrets.DOCKER_USERNAME }}
+      #     password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build Docker image
+      - name: Build Docker image
+        run: |
+          docker build -t devops-todo-app:${{ github.sha }} .
+          docker tag devops-todo-app:${{ github.sha }} devops-todo-app:latest
+
+      # Optional: Push to Docker registry
+      # - name: Push Docker image
+      #   run: |
+      #     docker push devops-todo-app:${{ github.sha }}
+      #     docker push devops-todo-app:latest
+
+  # Job 3: Deploy to Render (Production)
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build  # Only run if build succeeds
+    if: github.ref == 'refs/heads/main'  # Only deploy from main branch
+    
+    steps:
+      # Trigger Render deployment using webhook
+      - name: Deploy to Render
+        run: |
+          curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
+        
+      # Note: Replace the above with actual Render deployment steps
+      # You'll need to configure RENDER_SERVICE_ID and RENDER_API_KEY in GitHub Secrets
+      
+      - name: Deployment status
+        run: echo "Deployment triggered successfully to Render"
