@@ -1,5 +1,3 @@
-/** Test**/
-
 /**
  * Unit tests for Task functionality
  * These tests demonstrate automated testing for DevOps CI/CD pipeline
