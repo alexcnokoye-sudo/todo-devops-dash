@@ -31,11 +31,10 @@ jobs:
       # Run unit tests with coverage
       - name: Run tests
         run: npm test
-
-      # Optional: Upload test coverage reports
+        
       - name: Upload coverage reports
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
