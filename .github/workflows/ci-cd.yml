@@ -1,3 +1,45 @@
+
+#  USER STORIES
+#  """As a signed in user, I want to add a new task with a description and due date - given I’m on the tasks page and authenticated."""
+#  Quality gate - Unit test for tasks and success.
+#  REFERENCE 
+#  - 'Automating unit checks in CI like this shortens feedback cycles and tends to reduce integration defects, improving delivery
+#  speed and quality. (Empirical SLR and TSE studies on CI effects).' 
+
+
+#  """As a returning user, I want my session to be recognised — given I have a valid session, when I open the app, I should be treated
+#     as signed in and see my tasks."""
+#  supabase.auth.getSession() 
+#  REFERENCE
+#  - 'According to OWASP standards, Sound session management like this is a core control supporting protection against session
+#  misuse or incorrect session binding. OWASP ASVS V3 session management'
+#  - 'Robust session controls help reduce exposure of personal data and align with secure by design guidance in frameworks like NIST SSDF'
+
+
+#  """As a product owner, I want deployments to run automatically — given the pipeline on main passes all checks, when CI completes
+#     successfully, the system should trigger a deployment to the live service."""
+#  gated by needs and job dependencies & main only 
+#  Secret URL (HTTP) 
+#  REFERENCE
+#  - Automated deployments, when paired with CI gates, means higher throughput and lower failure rates in DORA’s metrics
+#    DORA metrics guide
+#  - Automation reduces human error and supports repeatability recommended by secure SDLC frameworks from NIST SSDF
+
+
+#  """As a security conscious engineer, I want credentials stored securely — given the pipeline needs API keys, when CI runs,
+#     it should read them from GitHub Secrets and never require secrets to be committed to the repo."""
+#  reads .RENDER_SERVICE_ID and .RENDER_API_KEY 
+#  .gitignore
+#  REFERENCE
+#  Managing secrets outside source control aligns with NIST SP 800 53 control families (access control, configuration management)
+#  and reduces credential leak risk.
+#  Centralised, rotated secrets are consistent with OWASP secrets management guidance for DevOps environments.
+#  OWASP Secrets Management Cheat Sheet
+
+
+
+
+
 name: CI/CD Pipeline
 
 # Trigger workflow on push to main branch or pull requests
@@ -53,24 +95,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      # Login to Docker Hub (optional - configure secrets)
-      # - name: Login to Docker Hub
-      #   uses: docker/login-action@v2
-      #   with:
-      #     username: ${{ secrets.DOCKER_USERNAME }}
-      #     password: ${{ secrets.DOCKER_PASSWORD }}
-
       # Build Docker image
       - name: Build Docker image
         run: |
           docker build -t devops-todo-app:${{ github.sha }} .
           docker tag devops-todo-app:${{ github.sha }} devops-todo-app:latest
 
-      # Optional: Push to Docker registry
-      # - name: Push Docker image
-      #   run: |
-      #     docker push devops-todo-app:${{ github.sha }}
-      #     docker push devops-todo-app:latest
+  
 
   # Job 3: Deploy to Render (Production)
   deploy:
@@ -82,10 +113,7 @@ jobs:
       # Trigger Render deployment using webhook
       - name: Deploy to Render
         run: |
-          curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}
-        
-      # Note: Replace the above with actual Render deployment steps
-      # You'll need to configure RENDER_SERVICE_ID and RENDER_API_KEY in GitHub Secrets
+          curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_API_KEY }}        
       
       - name: Deployment status
         run: echo "Deployment triggered successfully to Render"
